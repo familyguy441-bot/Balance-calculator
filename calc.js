@@ -1,5 +1,5 @@
 /* Balancing & Vibration Calculator - calculation engine.
-   Every formula is a direct port of the v2 workbook (spec.py). Blank / invalid inputs arrive as NaN
+   Every formula is a direct port of the v3 workbook (src_v3/spec.py). Blank / invalid inputs arrive as NaN
    and propagate, so any result the workbook would show as "" (IFERROR / ISBLANK) comes out NaN here
    and the UI shows a friendly blank. */
 (function (g) {
@@ -19,6 +19,9 @@
   var GRADES = {}, GRADE_APP = {}, MATS = {};
   DATA.lists.Grades.forEach(function (r) { GRADES[r[0]] = r[1]; GRADE_APP[r[0]] = r[2]; });
   DATA.lists.Mat.forEach(function (r) { MATS[r[0]] = [r[1], r[2]]; });
+  function table(name) { var t = {}; DATA.lists[name].forEach(function (r) { t[r[0]] = r[1]; }); return t; }
+  var DRILLS = table("DrillSz"), DMATS = table("DMat"), PTANG = table("PtAng");
+  var CUSTOM_DRILL = DATA.lists.DrillSz[DATA.lists.DrillSz.length - 1][0], DEPTH_TIP = DATA.lists.DepthB[1];
 
   var C = {};
 
@@ -182,9 +185,56 @@
     return o;
   };
 
+  /* v3: correction by removal - drilled holes (cylinder + point cone), inverse depth, unbalance removed */
+  C.drill = function (p) {
+    var o = {};
+    var tip = p.hb === DEPTH_TIP;
+    var hmm = p.h * (p.hu === "in" ? 25.4 : 1);
+    var ang = (p.pa in PTANG) ? PTANG[p.pa] : NaN;
+    o.Dmm = p.dsel === CUSTOM_DRILL ? p.dc * (p.dcu === "in" ? 25.4 : 1) : (DRILLS[p.dsel] != null ? DRILLS[p.dsel] : NaN);
+    o.Din = o.Dmm / 25.4;
+    o.hc = ang >= 180 ? 0 : (o.Dmm / 2) / Math.tan(rad(ang / 2));
+    var hce = isNaN(hmm) ? NaN : (tip ? Math.min(hmm, o.hc) : o.hc);
+    o.hf = tip ? Math.max(0, hmm - o.hc) : hmm;
+    if (isNaN(hmm - o.hc)) o.hf = NaN;
+    o.ht = o.hf + hce;
+    o.htin = o.ht / 25.4;
+    var Ad = PI / 4 * o.Dmm * o.Dmm, Vf3 = PI / 12 * o.Dmm * o.Dmm * o.hc;
+    o.Vcyl = Ad * o.hf / 1000;
+    o.Vcone = (isNaN(hce) || isNaN(o.hc)) ? NaN : (o.hc === 0 ? 0 : Vf3 * Math.pow(hce / o.hc, 3)) / 1000;
+    o.V = o.Vcyl + o.Vcone;
+    o.Vin = o.V / 16.387064;
+    o.rho = p.mat === "Custom" ? p.rc : (DMATS[p.mat] != null ? DMATS[p.mat] : NaN);
+    o.mh = o.V * o.rho;
+    o.mhoz = o.mh / OZ;
+    o.m = o.mh * p.nh;
+    o.moz = o.m / OZ;
+    o.mlb = o.m / 453.59237;
+    var rmm = p.r * (p.ru === "in" ? 25.4 : 1), mtg = p.mt * (p.mtu === "oz" ? OZ : 1);
+    o.U = rmm > 0 ? o.m * rmm : NaN;
+    o.Uoz = o.U / OZIN;
+    o.mtp = mtg > 0 ? mtg / p.nh : NaN;
+    o.Vreq = o.mtp / o.rho;
+    var Vr3 = o.Vreq * 1000, ok = num(Vr3) && num(Vf3);
+    o.hfr = !ok ? NaN : (Vr3 >= Vf3 ? (Vr3 - Vf3) / Ad : 0);
+    o.hfrin = o.hfr / 25.4;
+    o.htr = !ok ? NaN : (Vr3 >= Vf3 ? o.hfr + o.hc : Math.pow(3 * Vr3 / (PI * Math.pow(Math.tan(rad(ang / 2)), 2)), 1 / 3));
+    o.htrin = o.htr / 25.4;
+    o.tchk = num(o.hfr) ? (Vr3 < Vf3 ? "Target is reached inside the drill point - drill to the tip depth only (full diameter not reached)"
+      : o.hfr > 3 * o.Dmm ? "Required depth exceeds 3 × D - consider a larger drill, more holes or a larger radius"
+      : "Drill each hole to the full-diameter depth shown (tip depth includes the point)") : "";
+    if (p.dsel === CUSTOM_DRILL && !(p.dc > 0)) o.chk = "Enter a custom drill diameter";
+    else if (p.mat === "Custom" && !(p.rc > 0)) o.chk = "Enter a custom density";
+    else if (tip && (num(hmm) ? hmm : 0) < o.hc) o.chk = "Tip depth is shorter than the point cone - only a partial cone is removed";
+    else o.chk = "Inputs OK";
+    o.acc = "Approximate: drill wander, chamfers / countersinks, burrs, material voids and coatings are not modelled - weigh or re-check the balance after drilling";
+    return o;
+  };
+
   /* Input validation exactly as the workbook's data-validation rules. Returns "" when OK. */
   var DV_MSG = { pos: "Enter a number greater than 0.", nonneg: "Enter a number of 0 or more.",
-                 angle: "Enter an angle between -360 and 360 degrees.", num: "Enter a number." };
+                 angle: "Enter an angle between -360 and 360 degrees.", num: "Enter a number.",
+                 int: "Enter a whole number of 1 or more." };
   function parseNum(s) {
     if (s === null || s === undefined) return null;
     s = String(s).trim().replace(/\s/g, "");
@@ -198,6 +248,7 @@
     if (dv === "pos" && !(v > 0)) return DV_MSG.pos;
     if (dv === "nonneg" && !(v >= 0)) return DV_MSG.nonneg;
     if (dv === "angle" && !(v >= -360 && v <= 360)) return DV_MSG.angle;
+    if (dv === "int" && !(v >= 1 && Math.floor(v) === v)) return DV_MSG.int;
     if (Math.abs(v) > 1e15) return DV_MSG.num;
     return "";
   }

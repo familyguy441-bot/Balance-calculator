@@ -2,7 +2,7 @@
 (function () {
   "use strict";
   var D = window.BC_DATA, C = window.BC_CALC, F = window.BC_FMT;
-  var VERSION = "2.0.0";
+  var VERSION = "3.0.0";
   var LS = "ahbc.v2.";
   var view = document.getElementById("view");
   var $ = function (s, r) { return (r || document).querySelector(s); };
@@ -60,7 +60,8 @@
   function optionLabel(lst, o) {
     if (lst === "Grades") return o[0] + "  -  " + o[2];
     if (lst === "Mat") return o[1] ? o[0] + "  (E " + o[1] + " GPa, ρ " + o[2] + ")" : o[0];
-    return o;
+    if (lst === "DMat") return o[1] ? o[0] + "  (ρ " + o[1].toFixed(2) + " g/cm³)" : o[0];
+    return Array.isArray(o) ? o[0] : o;
   }
 
   /* ---------- units ---------- */
@@ -83,10 +84,11 @@
   /* ---------- message classification for check rows ---------- */
   function msgClass(key, text) {
     if (!text) return "empty";
-    if (key === "app") return "note";
+    if (key === "app" || key === "acc") return "note";
+    if (key === "tchk") return /^DRILL EACH/i.test(text) ? "ok" : "warn";
     var t = text.toUpperCase();
     if (/^RIGID|INPUTS OK|TRIAL RESPONSE OK|WITHIN 30-70|≤ 10 %/.test(t)) return "ok";
-    if (/SUPERCRITICAL|EXCEEDS|WEAK|MUST|ENTER CUSTOM|BETWEEN THE BEARINGS/.test(t)) return "bad";
+    if (/SUPERCRITICAL|EXCEEDS|WEAK|MUST|ENTER CUSTOM|ENTER A CUSTOM|BETWEEN THE BEARINGS/.test(t)) return "bad";
     return "warn";
   }
   var ICON = { ok: "✓", warn: "!", bad: "!", note: "i", empty: "–" };
@@ -130,7 +132,7 @@
     view.innerHTML = "";
     view.appendChild(el("div", { class: "hero" }, [
       el("h1", { text: "Balancing, Vibration & High-Speed Rotor Calculator" }),
-      el("p", { text: "American Hofmann field edition · mirrors workbook v2. Pick a calculator below." }),
+      el("p", { text: "American Hofmann field edition · mirrors workbook v3. Pick a calculator below." }),
       el("div", { class: "legend" }, [el("span", { class: "lg-in", text: "Input" }), el("span", { class: "lg-out", text: "Result" }), el("span", { class: "lg-key", text: "Key result" })])
     ]));
     var list = el("nav", { class: "card", "aria-label": "Calculators" });
@@ -166,16 +168,16 @@
       "<h3>How to use</h3><ul><li>Yellow boxes are inputs; green boxes are results and can't be edited.</li>" +
       "<li>Tap <b>i</b> on any line for a plain-English description, the formula and the full-precision value.</li>" +
       "<li>Each calculator ends with its own unit converter.</li><li>Your last inputs are remembered; ↺ resets to defaults.</li></ul>" +
-      "<h3>Assumptions</h3><p>Rigid bearings and supports; Euler-Bernoulli beam (no shear, no gyroscopic stiffening); disc treated as a point mass; vibration conversions valid for a single sinusoid only.</p>" +
+      "<h3>Assumptions</h3><p>Rigid bearings and supports; Euler-Bernoulli beam (no shear, no gyroscopic stiffening); disc treated as a point mass; vibration conversions valid for a single sinusoid only. Drill removal: ideal cylinder + drill-point cone with typical handbook densities - drill wander, chamfers, burrs, voids and coatings are not modelled, so treat it as an estimate and re-check the balance.</p>" +
       "<p>Not included: tolerance transfer to non-bearing correction planes and outboard / overhung rotors (ISO 21940-11 cl. 7.3+), two-plane influence-coefficient balancing, bearing / support stiffness in critical speeds, ISO 21940-12 flexible-rotor tolerances.</p>" +
-      "<h3>Verification</h3><p>The calculation engine is a direct port of workbook v2 and was checked against the workbook's own Verification sheet (347 cases) and a full LibreOffice recalculation of every result line in 4 input cases, all to a relative error below 1e-9.</p>";
+      "<h3>Verification</h3><p>The calculation engine is a direct port of workbook v3 and was checked against the workbook's own Verification sheet (469 cases) and a full LibreOffice recalculation of every result line in 4 input cases, all to a relative error below 1e-9.</p>";
     view.appendChild(p);
     view.appendChild(el("h2", { class: "sec", text: "Formulas & references" }));
     var box = el("div", { class: "card" }); var body = el("div", { class: "refbody", style: "border:0" });
     D.calcs.forEach(function (c) { c.refs.forEach(function (r) { body.appendChild(refEl(r, c.no + " · ")); }); });
     D.generalRefs.forEach(function (r) { body.appendChild(refEl(r, "")); });
     box.appendChild(body); view.appendChild(box);
-    view.appendChild(el("p", { class: "foot", text: "Balancing & Vibration Calculator v" + VERSION + " · formulas mirror the Excel workbook v2" }));
+    view.appendChild(el("p", { class: "foot", text: "Balancing & Vibration Calculator v" + VERSION + " · formulas mirror the Excel workbook v3" }));
   }
   function symEl(sym) {
     if (!sym) return null;
@@ -260,6 +262,8 @@
           if (r.kind === "in") {
             var e = res.errors[r.key] || ""; er.textContent = e; er.hidden = !e; ctl.classList.toggle("bad", !!e);
             if (calc.id === "crit" && (r.key === "Ec" || r.key === "rc")) row.classList.toggle("dim", s.in.mat !== "Custom");
+            if (calc.id === "drill" && r.key === "rc") row.classList.toggle("dim", s.in.mat !== "Custom");
+            if (calc.id === "drill" && r.key === "dc") row.classList.toggle("dim", s.in.dsel !== optionsFor("DrillSz").slice(-1)[0]);
           }
         });
       } else if (r.kind === "out") {

@@ -1,6 +1,6 @@
 # Balance-calculator
 
-Field calculator for balancing, vibration, and high-speed rotors. It covers ISO 21940-11 residual unbalance tolerance, unbalance force, correction weight, vibration units, speed, critical speed, and trial-weight balancing, with unit converters on each calculator.
+Field calculator for balancing, vibration, and high-speed rotors. It covers ISO 21940-11 residual unbalance tolerance, unbalance force, correction weight, vibration units, speed, critical speed, trial-weight balancing, and a drill-removal weight estimator (correction by drilling), with unit converters on each calculator.
 
 The site is the repository root and is published with GitHub Pages at <https://familyguy441-bot.github.io/Balance-calculator/>.
 
