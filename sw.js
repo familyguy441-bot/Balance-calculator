@@ -1,5 +1,5 @@
 /* Offline cache. Bump CACHE when any file changes so phones pick up the new version. */
-var CACHE = "balancing-calc-v2.0.0";
+var CACHE = "balancing-calc-v3.0.0";
 var ASSETS = ["./", "index.html", "styles.css", "app.js", "calc.js", "fmt.js", "data.js", "manifest.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon-32.png"];
 self.addEventListener("install", function (e) {
