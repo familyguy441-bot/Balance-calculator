@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Balancing &amp; Vibration Calculator</title>
+<meta name="description" content="Field calculator for balancing, vibration and high-speed rotors - ISO 21940-11 tolerance, unbalance force, correction weight, vibration units, speed, critical speed and trial-weight balancing.">
+<meta name="theme-color" content="#0B5563">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Balancing Calc">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="appbar">
+  <button class="ab-btn" id="btnBack" aria-label="Back to home" hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4.5 8 12l7.5 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <div class="ab-title"><span id="abNo" class="ab-no" hidden></span><span id="abTitle">Balancing Calculator</span></div>
+  <button class="ab-btn" id="btnReset" aria-label="Reset inputs to defaults" title="Reset to defaults">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+</header>
+<main id="view" tabindex="-1"></main>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript><p style="padding:16px">This calculator needs JavaScript enabled.</p></noscript>
+<script src="data.js"></script>
+<script src="fmt.js"></script>
+<script src="calc.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

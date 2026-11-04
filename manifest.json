@@ -1,0 +1,18 @@
+{
+  "name": "Balancing & Vibration Calculator",
+  "short_name": "Balancing Calc",
+  "description": "Field calculator for balancing, vibration and high-speed rotors (ISO 21940-11 tolerance, unbalance force, correction weight, vibration units, speed, critical speed, trial-weight balancing).",
+  "id": "/Balance-calculator/",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F3F5F7",
+  "theme_color": "#0B5563",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
